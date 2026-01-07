@@ -376,6 +376,9 @@
         <div class="tabbar">
           <div class="tab active" data-target="#usecase1">Use Case 1 · Lateral Movement</div>
           <div class="tab" data-target="#usecase2">Use Case 2 · Credential Abuse</div>
+          <div class="tab" data-target="#usecase3">Use Case 3 · Active Alert and Incident Lookup</div>
+          <div class="tab" data-target="#usecase4">Use Case 4 · Checking IP Reputation</div>
+          <div class="tab" data-target="#usecase5">Use Case 5 · Summarizing an incident and mailing it</div>
         </div>
 
         <!-- USE CASE 1: LATERAL MOVEMENT -->
@@ -1638,12 +1641,743 @@
             </div>
           </div>
         </div>
+        <!-- ================= USE CASE 3 ================= -->
+        <div class="chat-screen" id="usecase3">
+
+          <div class="message">
+            <div class="avatar user">U</div>
+            <div class="bubble user-text">
+              Do we have any active incidents or alerts that need immediate attention right now?
+            </div>
+          </div>
+
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble">
+              I’ll start by checking open incidents and active alerts across the environment and then validate which ones require immediate attention based on severity, recency, and risk.
+            </div>
+          </div>
+
+          <!-- get_accounts -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_accounts</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{}</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+  "data": {
+     "Accounts": [
+       {
+         "account_id": "854966845",
+         "name": "Standalone user"
+       }
+     ]
+  }
+}</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>The production tenant is selected, so I’ll review active security items within this scope.</p>
+
+
+          <!-- list_incidents -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">list_incidents</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "status": "open"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "incidents": [
+            {
+              "id": "INC-101",
+              "title": "Suspicious PowerShell activity on WIN-1244",
+              "severity": "critical",
+              "status": "in_progress"
+            }
+          ]
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>There is one critical incident currently in progress involving suspicious PowerShell execution.</p>
+
+
+          <!-- get_alerts -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_alerts</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "severity": "high",
+          "status": "open"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "alerts": [
+            {
+              "id": "ALERT-77",
+              "title": "Multiple failed logons followed by success",
+              "host": "WIN-1244"
+            },
+            {
+              "id": "ALERT-78",
+              "title": "Unusual outbound connection from endpoint",
+              "host": "WIN-2210"
+            }
+          ]
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+  
+
+          <p>Two high-severity alerts are active and linked to endpoint and authentication anomalies.</p>
+
+
+          <!-- get_log_sources -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_log_sources</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "hostname": ["WIN-1244", "WIN-2210"]
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "WIN-1244": { "status": "OK", "last_event": "5 minutes ago" },
+          "WIN-2210": { "status": "OK", "last_event": "3 minutes ago" }
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+
+          
+
+          <p>Logs are flowing from both hosts, so the alerts are reliable and current.</p>
+
+          <!-- get_user_risk_score -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_user_risk_score</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "user": "AJAY"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "risk_level": "high",
+          "score": 82
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+
+         <!-- get_entity_risk_score -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_entity_risk_score</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "entity": "WIN-1244"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "risk_level": "high",
+          "score": 76
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          
+
+          <p>
+            Based on the current state, there is one critical incident and two high-severity alerts that clearly require immediate attention.
+            The affected host and user both show elevated risk, and telemetry confirms recent activity.
+            The next step should be to prioritize containment of the critical incident, isolate the impacted endpoint if needed,
+            and closely monitor the high-severity alerts for escalation while investigation continues.
+          </p>
+
+        </div>
+        <div class="chat-screen" id="usecase4">
+
+          <div class="message">
+            <div class="avatar user">U</div>
+            <div class="bubble user-text">
+              Has this IP 203.0.113.10 been involved in malicious activity anywhere else in our environment?
+            </div>
+          </div>
+
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble">
+              I’ll check whether this IP has appeared elsewhere across authentication, network, and endpoint telemetry to see if it represents a broader pattern or an isolated event.
+            </div>
+          </div>
+
+          <!-- get_accounts -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_accounts</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{}</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "data": {
+            "Accounts": [
+              {
+                "account_id": "854966845",
+                "name": "Standalone user"
+              }
+            ]
+          }
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>The search will be scoped to the production tenant to ensure full environment coverage.</p>
+
+          <!-- get_logtypes -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_logtypes</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{}</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "logtypes": [
+            "Windows Security",
+            "Firewall Logs",
+            "VPN Logs",
+            "Endpoint Network Activity"
+          ]
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>Authentication, firewall, VPN, and endpoint logs are relevant for tracking reuse of this IP.</p>
+
+          <!-- get_logfields -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_logfields</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "artifact_type": "ip"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "fields": ["src_ip", "dest_ip", "client_ip", "remote_ip"]
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>The IP can now be reliably searched across multiple telemetry sources.</p>
+
+          <!-- generate_query -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">generate_query</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "query": "Show all events involving IP 203.0.113.10",
+          "window": "last 30 days"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "query": "SELECT * FROM all_logs WHERE src_ip='203.0.113.10' OR dest_ip='203.0.113.10' OR client_ip='203.0.113.10' OR remote_ip='203.0.113.10'"
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- execute_query -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">execute_query</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "query": "SELECT * FROM all_logs WHERE src_ip='203.0.113.10' OR dest_ip='203.0.113.10' OR client_ip='203.0.113.10' OR remote_ip='203.0.113.10'"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "events": [
+            {
+              "host": "VPN-GW-01",
+              "user": "USER-Z",
+              "event": "multiple_failed_logins",
+              "timestamp": "2026-01-05T21:10:00Z"
+            },
+            {
+              "host": "APP-SRV-02",
+              "user": "USER-Z",
+              "event": "successful_login",
+              "timestamp": "2026-01-05T21:22:14Z"
+            }
+          ]
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>The IP appears in multiple authentication events involving the same user across different systems.</p>
+
+          <!-- get_ip_analysis_data -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_ip_analysis_data</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "ip": "203.0.113.10"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "risk_level": "high",
+          "categories": ["credential_stuffing", "proxy_network"]
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>
+            This IP is not an isolated occurrence. It has been used repeatedly across authentication attempts
+            and is associated with high-risk behavior. The repeated failures followed by a success indicate
+            a broader credential abuse pattern rather than a one-off event.
+            Immediate steps should include blocking the IP, reviewing all user accounts that interacted with it,
+            and validating whether additional systems were accessed during the same time window.
+          </p>
+
+        </div>
+        <div class="chat-screen" id="usecase5">
+
+          <div class="message">
+            <div class="avatar user">U</div>
+            <div class="bubble user-text">
+              Summarize Incident “Suspicious PowerShell Lateral Movement” dated 2026-01-05,
+              include the total downtime, how many accounts were affected, and a timeline of our response
+              from detection to containment. Format it as a formal post-incident report and mail it to x.y@testorg.com.
+            </div>
+          </div>
+
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble">
+              I’ll gather the incident details, alerts, and response actions, then summarize the findings
+              into a formal post-incident report and prepare an email for stakeholders.
+            </div>
+          </div>
+
+          <!-- get_accounts -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_accounts</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{}</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "Accounts": [
+            {
+              "account_id": "854966845",
+              "name": "Standalone user"
+            }
+          ]
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>The production account is selected to retrieve the complete incident context.</p>
+
+          <!-- list_incidents -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">list_incidents</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "incident_name": "Suspicious PowerShell Lateral Movement",
+          "date": "2026-01-05"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "incident_id": "INC-101",
+          "severity": "critical",
+          "detected_at": "2026-01-05T10:42:00Z",
+          "contained_at": "2026-01-05T12:05:00Z",
+          "affected_hosts": ["WIN-1244", "WIN-2210"],
+          "affected_users": ["AJAY"]
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>The incident was detected and fully contained within the same operational window.</p>
+
+          <!-- get_alerts -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">get_alerts</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">log360cloud-mcp</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">{
+          "incident_id": "INC-101"
+        }</pre>
+              </div>
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">{
+          "alerts": [
+            {
+              "type": "Suspicious PowerShell Execution",
+              "time": "2026-01-05T10:42:00Z"
+            },
+            {
+              "type": "Lateral Authentication Attempt",
+              "time": "2026-01-05T10:45:30Z"
+            }
+          ]
+        }</pre>
+              </div>
+            </div>
+          </div>
+
+          <p>The alerts provide a clear timeline for initial detection and escalation.</p>
+
+          <!-- EMAIL CONTENT GENERATED (AGENT REASONING, NOT A TOOL) -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">Generated Email Content</span>
+              </div>
+              <div class="tool-right">
+                <span class="tool-server">agent-output</span>
+                <span class="tool-status">📝</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Email Draft</div>
+                <pre class="code-line">
+          To: x.y@testorg.com
+          Subject: Post-Incident Report – Suspicious PowerShell Lateral Movement (05 Jan 2026)
+
+          Dear Team,
+
+          Please find below the post-incident summary for the security incident detected on
+          05 January 2026 involving suspicious PowerShell-based lateral movement.
+
+          Incident Summary:
+          - Severity: Critical
+          - Total Downtime: 1 hour 23 minutes
+          - Affected Accounts: 1 (AJAY)
+          - Affected Hosts: WIN-1244, WIN-2210
+
+          Response Timeline:
+          • 10:42 UTC – Suspicious PowerShell execution detected
+          • 10:45 UTC – Lateral authentication attempts identified
+          • 11:10 UTC – Affected endpoint isolated
+          • 12:05 UTC – Threat fully contained
+
+          No further malicious activity was observed following containment.
+
+          Regards,
+          Security Operations Team
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <p>The email content has been generated based on the incident data and response timeline.</p>
+
+          <!-- SEND EMAIL (MCP TOOL CALL) -->
+          <div class="tool-block">
+            <div class="tool-header" data-toggle>
+              <div class="tool-summary">
+                <span class="tool-arrow">➜</span>
+                <span class="tool-name">send_email</span>
+              </div>
+              <div class="tool-right">
+                <div class="tool-server">zoho mail - MCP</div>
+                <span class="tool-status">✔</span>
+                <div class="chevron">▶</div>
+              </div>
+            </div>
+
+            <div class="tool-body">
+              <div class="tool-section">
+                <div class="tool-section-title">Input</div>
+                <pre class="code-line">
+          {
+            "to": ["x.y@testorg.com"],
+            "subject": "Post-Incident Report – Suspicious PowerShell Lateral Movement (05 Jan 2026)",
+            "body_ref": "generated_email_content"
+          }
+                </pre>
+              </div>
+
+              <div class="tool-section">
+                <div class="tool-section-title">Output</div>
+                <pre class="code-line">
+          {
+            "status": "sent",
+            "message_id": "mail-902381",
+            "sent_at": "2026-01-06T09:18:22Z"
+          }
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- FINAL DETAILED SUMMARY (LIKE YOUR SCREENSHOT) -->
+          <div class="message">
+            <div class="avatar copilot">C</div>
+            <div class="bubble">
+
+              <strong>Security Analysis – Post-Incident Review</strong><br><br>
+
+              <strong>Overall Assessment:</strong> ✅ Incident Successfully Contained<br><br>
+
+              <strong>Key Observations</strong><br>
+              • Activity was limited to a single user account and two endpoints<br>
+              • PowerShell execution patterns were abnormal but short-lived<br>
+              • No evidence of data access or persistence post-isolation<br><br>
+
+              <strong>Impact Analysis</strong><br>
+              • Total Downtime: ~1 hour 23 minutes<br>
+              • Affected Accounts: 1<br>
+              • Business Impact: Minimal, no service outage observed<br><br>
+
+              <strong>Response Effectiveness</strong><br>
+              • Detection occurred within minutes of malicious execution<br>
+              • Cross-tool correlation accelerated containment<br>
+              • Endpoint isolation prevented further lateral movement<br><br>
+
+              <strong>Current Security Posture</strong><br>
+              Based on continued monitoring and absence of follow-up alerts,
+              the environment is currently stable with no outstanding security concerns.
+
+            </div>
+          </div>
+
+
+        </div>
+
+
+
+
+
 
         <!-- Shared input bar -->
         <div class="input-bar">
           <div class="input-wrapper">
             <span>U</span>
-            <input type="text" disabled value="MCP Copilot demo – tabs switch between Use Case 1 and Use Case 2." />
+            <input type="text" disabled value="Ask Copilot" />
             <span>⏎</span>
           </div>
         </div>

@@ -375,10 +375,10 @@
       <div class="content">
         <div class="tabbar">
           <div class="tab active" data-target="#usecase1">Use Case 1 · Lateral Movement</div>
-          <div class="tab" data-target="#usecase2">Use Case 2 · Credential Abuse</div>
+          <!-- <div class="tab" data-target="#usecase2">Use Case 2 · Credential Abuse</div>
           <div class="tab" data-target="#usecase3">Use Case 3 · Active Alert and Incident Lookup</div>
           <div class="tab" data-target="#usecase4">Use Case 4 · Checking IP Reputation</div>
-          <div class="tab" data-target="#usecase5">Use Case 5 · Summarizing an incident and mailing it</div>
+          <div class="tab" data-target="#usecase5">Use Case 5 · Summarizing an incident and mailing it</div> -->
         </div>
 
         <!-- USE CASE 1: LATERAL MOVEMENT -->
@@ -387,30 +387,30 @@
           <div class="message">
             <div class="avatar user">U</div>
             <div class="bubble user-text">
-              Get the top 3 detections and investigate. You can use all the mcp tools available.
+                Investigate suspicious lateral movement activity detected in the environment. Use all available MCP tools to validate.
             </div>
           </div>
 
           <!-- Copilot thinking + first response -->
-          <div class="message">
+          <!-- <div class="message">
             <div class="avatar copilot">C</div>
             <div class="bubble copilot-text">
-              <!-- <div class="thinking">Thinking</div> -->
-              <p>Let me start by looking at your latest high-severity detections in CrowdStrike. I’ll focus on whatever looks most critical and then pivot as needed.</p>
+              <div class="thinking">Thinking</div>
+              
             </div>
-          </div>
+          </div> -->
 
           <!-- Falcon: detections -->
           <div class="message">
             <div class="avatar copilot">C</div>
             <div class="bubble copilot-text">
-              <p>First, I’m pulling the recent open high-severity incidents.</p>
+              <p>Initiating Lateral Movement Investigation.I will validate this activity using all available MCP tools.</p>
 
-              <div class="tool-block">
+              <!-- <div class="tool-block">
                 <div class="tool-header" data-toggle>
                   <div class="tool-summary">
                     <span class="tool-arrow">➜</span>
-                    <span class="tool-name">incidents.read</span>
+                    <span class="tool-name">falcon_get_incident_details</span>
                   </div>
                   <div class="tool-right">
                     <span class="tool-server">falcon-mcp</span>
@@ -457,15 +457,15 @@
                 </div>
               </div>
 
-              <p>The first one is the most critical and directly mentions lateral movement, so I’ll expand that.</p>
+              <p>The first one is the most critical and directly mentions lateral movement, so I’ll expand that.</p> -->
 
-              <div class="thinking">Pulling detailed incident and asset context</div>
+              <!-- <div class="thinking">Pulling detailed incident and asset context</div> -->
 
               <div class="tool-block">
                 <div class="tool-header" data-toggle>
                   <div class="tool-summary">
                     <span class="tool-arrow">➜</span>
-                    <span class="tool-name">incidents.read</span>
+                    <span class="tool-name">falcon_get_incident_details</span>
                   </div>
                   <div class="tool-right">
                     <span class="tool-server">falcon-mcp</span>
@@ -508,7 +508,7 @@
                 <div class="tool-header" data-toggle>
                   <div class="tool-summary">
                     <span class="tool-arrow">➜</span>
-                    <span class="tool-name">discover.hosts</span>
+                    <span class="tool-name">falcon_get_host_details</span>
                   </div>
                   <div class="tool-right">
                     <span class="tool-server">falcon-mcp</span>
@@ -559,9 +559,9 @@
           <div class="message">
             <div class="avatar copilot">C</div>
             <div class="bubble copilot-text">
-              <p>I’ll check Log360Cloud to confirm log ingestion and then look for the corresponding remote logons and PowerShell activity.</p>
+              <!-- <p>I’ll check Log360Cloud to confirm log ingestion and then look for the corresponding remote logons and PowerShell activity.</p> -->
 
-              <div class="tool-block">
+              <!-- <div class="tool-block">
                 <div class="tool-header" data-toggle>
                   <div class="tool-summary">
                     <span class="tool-arrow">➜</span>
@@ -604,9 +604,9 @@
 }</pre>
                   </div>
                 </div>
-              </div>
+              </div> -->
 
-              <p>With logs flowing, I’ll query for the remote logons from <code>HOST-A</code> to <code>HOST-B</code> around the same time.</p>
+              <p>I’ll query for the remote logons from <code>HOST-A</code> to <code>HOST-B</code> around the same time.</p>
 
               <div class="tool-block">
                 <div class="tool-header" data-toggle>
@@ -624,8 +624,8 @@
                   <div class="tool-section">
                     <div class="tool-section-title">Input</div>
 <pre class="code-line">{
-  "query": "Show remote logons from HOST-A to HOST-B",
-  "window": "last 2 hours"
+  "query": "Show remote logons from HOST-A",
+  <!-- "window": "last 2 hours" -->
 }</pre>
                   </div>
                   <div class="tool-section">
@@ -692,8 +692,8 @@
                   <div class="tool-section">
                     <div class="tool-section-title">Input</div>
 <pre class="code-line">{
-  "query": "Show PowerShell execution with network connections from HOST-A",
-  "window": "last 2 hours"
+  "query": "Show PowerShell execution with network connections",
+  <!-- "window": "last 2 hours" -->
 }</pre>
                   </div>
                   <div class="tool-section">
@@ -746,7 +746,7 @@
 
               <div class="thinking">Checking if this is normal behaviour for the identity and host</div>
 
-              <p>To understand how unusual this is, I’m looking at UEBA scores for the account and source host.</p>
+              <p>To understand how unusual this is, I’m looking at the scores for the account and source host.</p>
 
               <div class="tool-block">
                 <div class="tool-header" data-toggle>
@@ -772,12 +772,7 @@
 <pre class="code-line">{
   "user": "corp\\svc-admin",
   "score": 86,
-  "risk_level": "high",
-  "drivers": [
-    "rare source IP for admin activity",
-    "outside business-hours logons",
-    "first-time PowerShell remoting to HOST-B"
-  ]
+  "confidence_level": 92
 }</pre>
                   </div>
                 </div>
@@ -807,23 +802,67 @@
 <pre class="code-line">{
   "entity": "HOST-A",
   "score": 72,
-  "risk_level": "medium",
-  "drivers": [
-    "spike in outbound WinRM connections",
-    "unusual destination pair HOST-A → HOST-B",
-    "increase in failed authentication attempts"
-  ]
+  "confidence_level": 95
 }</pre>
                   </div>
                 </div>
               </div>
 
-              <p>So far, everything points to suspicious lateral movement that’s also anomalous for both the user and the host. I’ll now look at the endpoint telemetry to see exactly what executed.</p>
+              <p>So far, everything points to suspicious lateral movement that’s also anomalous for both the user and the host.</p>
+              <div class="tool-block">
+                    <div class="tool-header" data-toggle>
+                      <div class="tool-summary">
+                        <span class="tool-arrow">➜</span>
+                        <span class="tool-name">get_process_analysis_data</span>
+                      </div>
+                      <div class="tool-right">
+                        <span class="tool-server">log360cloud-mcp</span>
+                        <span class="tool-status">✔</span>
+                        <div class="chevron">▶</div>
+                      </div>
+                    </div>
+                    <div class="tool-body">
+                      <div class="tool-section">
+                        <div class="tool-section-title">Input</div>
+    <pre class="code-line">{
+      "process": "powershell.exe"
+    }</pre>
+                      </div>
+                      <div class="tool-section">
+                        <div class="tool-section-title">Output</div>
+    <pre class="code-line">{
+      "process_tree": {
+        "root": "explorer.exe",
+        "children": [
+          {
+            "name": "cmd.exe",
+            "children": [
+              {
+                "name": "powershell.exe",
+                "children": [
+                  {
+                    "name": "rundll32.exe",
+                    "image_path": "C\\\\ProgramData\\\\temp\\\\&lt;random&gt;.dll"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+    </pre>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p>This confirms that the session wasn’t just reconnaissance; it actually deployed tooling and established persistence on the destination host.</p>
             </div>
           </div>
 
+
           <!-- SentinelOne: endpoint -->
-          <div class="message">
+          <!-- <div class="message">
             <div class="avatar copilot">C</div>
             <div class="bubble copilot-text">
               <p>Next, I’m checking SentinelOne for the process lineage around PowerShell and any associated payloads.</p>
@@ -922,7 +961,7 @@
 
               <p>This confirms that the session wasn’t just reconnaissance; it actually deployed tooling and established persistence on the destination host.</p>
             </div>
-          </div>
+          </div> -->
 
           <!-- Elastic: artefacts -->
           <div class="message">
@@ -1062,16 +1101,15 @@
                   account. Process tree: <code>explorer.exe → cmd.exe → powershell.exe → rundll32.exe</code>.
                 </li>
                 <li>
-                  <strong>Log360Cloud (SIEM + UEBA)</strong> – Confirms remote logons and WinRM activity,
+                  <strong>Log360Cloud (SIEM + UEBA)</strong> – Confirms remote logons,
                   and flags the user/host as **high risk** (first-time remoting to HOST-B, unusual timing).
-                  A key gap: missing detailed PowerShell logs from <code>HOST-A</code>, leaving part of the
-                  execution chain invisible at SIEM level.
+                  
                 </li>
-                <li>
+                <!-- <li>
                   <strong>SentinelOne</strong> – Shows obfuscated PowerShell, in-memory payload decoding,
                   and a new DLL + service on <code>HOST-B</code>, indicating **tool deployment and
                   persistence**, not just recon.
-                </li>
+                </li> -->
                 <li>
                   <strong>Elastic</strong> – Correlates security events, PowerShell transcripts and Sysmon
                   artefacts (file + registry changes) to confirm that the remote session was actively used
@@ -1088,9 +1126,9 @@
               </p>
             </div>
           </div>
-
-        <!-- USE CASE 2: COMPROMISED CREDENTIAL & IDENTITY ABUSE -->
         </div>
+
+                <!-- USE CASE 2: COMPROMISED CREDENTIAL & IDENTITY ABUSE -->
         <div class="chat-screen" id="usecase2">
           <!-- User prompt -->
           <div class="message">

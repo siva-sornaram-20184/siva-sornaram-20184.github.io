@@ -624,14 +624,14 @@
                   <div class="tool-section">
                     <div class="tool-section-title">Input</div>
 <pre class="code-line">{
-  "query": "Show remote logons from HOST-A",
+  "generate_query_for": "Show remote logons from HOST-A",
   <!-- "window": "last 2 hours" -->
 }</pre>
                   </div>
                   <div class="tool-section">
                     <div class="tool-section-title">Output</div>
 <pre class="code-line">{
-  "query": "SELECT * FROM security_logs WHERE source_host = 'HOST-A' AND target_host = 'HOST-B' AND event_id = 4624 AND logon_type = 3 AND timestamp &gt;= now()-2h"
+  "query": "logtype=log360 and iename = "windows logon success" and logontype = "3" and remotehost = "HOST-A""
 }</pre>
                   </div>
                 </div>
@@ -653,7 +653,7 @@
                   <div class="tool-section">
                     <div class="tool-section-title">Input</div>
 <pre class="code-line">{
-  "query": "SELECT * FROM security_logs WHERE source_host = 'HOST-A' AND target_host = 'HOST-B' AND event_id = 4624 AND logon_type = 3 AND timestamp &gt;= now()-2h"
+  "query": "logtype=log360 and iename = "windows logon success" and logontype = "3" and remotehost = "HOST-A""
 }</pre>
                   </div>
                   <div class="tool-section">
@@ -692,14 +692,14 @@
                   <div class="tool-section">
                     <div class="tool-section-title">Input</div>
 <pre class="code-line">{
-  "query": "Show PowerShell execution with network connections",
+  "generate_query_for": "Show PowerShell execution with network connections",
   <!-- "window": "last 2 hours" -->
 }</pre>
                   </div>
                   <div class="tool-section">
                     <div class="tool-section-title">Output</div>
 <pre class="code-line">{
-  "query": "SELECT * FROM process_logs WHERE host = 'HOST-A' AND process_name = 'powershell.exe' AND has_network_connections = true AND timestamp &gt;= now()-2h"
+  "query": "logtype=log360 and eventid = "4104" and processname = "powershell.exe" and hostname = "HOST-A""
 }</pre>
                   </div>
                 </div>
@@ -721,7 +721,7 @@
                   <div class="tool-section">
                     <div class="tool-section-title">Input</div>
 <pre class="code-line">{
-  "query": "SELECT * FROM process_logs WHERE host = 'HOST-A' AND process_name = 'powershell.exe' AND has_network_connections = true AND timestamp &gt;= now()-2h"
+  "query": "logtype=log360 and eventid = "4104" and processname = "powershell.exe" and hostname = "HOST-A""
 }</pre>
                   </div>
                   <div class="tool-section">

@@ -16,6 +16,22 @@
       flex-direction: column;
     }
 
+    section code, section pre {
+    font-family: "Consolas", "Courier New", monospace;
+    background: #1e1e1e;
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: #ffd166;
+  }
+
+    section li p, section li {
+      margin: 6px 0 0 0;
+    }
+
+    section ul {
+      padding-left: 20px;
+    }
+
     .app-shell {
       display: flex;
       flex-direction: column;
@@ -1086,44 +1102,90 @@
               </div>
 
               <!-- SHORTENED FINDINGS FOR USE CASE 1 -->
-              <h3>Findings 🧭</h3>
-              <p>
-                This is a **real lateral movement attempt**, not harmless admin work. A privileged user on
-                <code>HOST-A</code> used **encoded PowerShell remoting** to reach <code>HOST-B</code>,
-                dropped a DLL, and created a service – classic attacker behaviour.
-              </p>
+              <section style="font-family: Arial, sans-serif; line-height: 1.6; color: #e6e6e6;">
 
-              <h4>What each tool shows 🔍</h4>
+              <h2 style="color:#ff6b6b;">🚨 Security Findings – Suspicious PowerShell Lateral Movement (HOST-A)</h2>
+
+              <h3>🔍 Findings</h3>
               <ul>
-                <li>
-                  <strong>CrowdStrike Falcon</strong> – Detects suspicious PowerShell Remoting from
-                  <code>HOST-A</code> → <code>HOST-B</code> with an encoded command and a privileged
-                  account. Process tree: <code>explorer.exe → cmd.exe → powershell.exe → rundll32.exe</code>.
-                </li>
-                <li>
-                  <strong>Log360Cloud (SIEM + UEBA)</strong> – Confirms remote logons,
-                  and flags the user/host as **high risk** (first-time remoting to HOST-B, unusual timing).
-                  
-                </li>
-                <!-- <li>
-                  <strong>SentinelOne</strong> – Shows obfuscated PowerShell, in-memory payload decoding,
-                  and a new DLL + service on <code>HOST-B</code>, indicating **tool deployment and
-                  persistence**, not just recon.
-                </li> -->
-                <li>
-                  <strong>Elastic</strong> – Correlates security events, PowerShell transcripts and Sysmon
-                  artefacts (file + registry changes) to confirm that the remote session was actively used
-                  to modify the system.
-                </li>
+              <li>
+              <strong>🔴 Lateral Movement Confirmed</strong>
+              <p>PowerShell Remoting used from <code>HOST-A → HOST-B</code>. Remote session established via WinRM. Command observed: <code>Invoke-Command -ComputerName HOST-B</code>.</p>
+              </li>
+
+              <li>
+              <strong>🔴 Suspicious Authentication Activity</strong>
+              <p>Event <code>4624 LogonType 3 & 10</code> from HOST-A. Remote interactive logon to HOST-B detected.</p>
+              </li>
+
+              <li>
+              <strong>🔴 Malicious Process Activity</strong>
+              <p><code>powershell.exe</code> launched remotely. Parent process: <code>winrm.exe</code>. Unusual execution pattern for this user.</p>
+              </li>
+
+              <li>
+              <strong>🔴 Credential Access Behavior</strong>
+              <p>Access attempt to <code>LSASS</code> memory. Tooling behavior consistent with credential dumping.</p>
+              </li>
+
+              <li>
+              <strong>🟠 Artifact Creation</strong>
+              <p>Suspicious PowerShell script dropped on HOST-B:<br/>
+              <code>C:\Windows\Temp\svc.ps1</code></p>
+              </li>
+
+              <li>
+              <strong>🔴 UEBA Risk Indicators</strong>
+              <p>User risk score: High anomaly. HOST-A shows abnormal outbound admin behavior.</p>
+              </li>
               </ul>
 
-              <h4>Verdict ✅</h4>
-              <p>
-                Cross-tool evidence clearly confirms an **active lateral movement operation** from
-                <code>HOST-A</code> to <code>HOST-B</code>. Immediate actions should include isolating both
-                hosts, rotating credentials for the admin account, and **enabling full PowerShell logging on
-                HOST-A** to close the current visibility gap.
+              <p style="background:#2b2b2b; padding:10px; border-left:4px solid #ff4d4d;">
+              <strong>🟥 Overall Assessment:</strong><br/>
+              Confirmed suspicious lateral movement with credential access indicators.
               </p>
+
+              <hr/>
+
+              <h3>🛠️ Recommended Actions</h3>
+
+              <h4>🔒 Immediate Containment</h4>
+              <ul>
+              <li>Isolate <code>HOST-A</code> and <code>HOST-B</code>.</li>
+              <li>Terminate active PowerShell / WinRM sessions.</li>
+              <li>Disable or lock the involved user account.</li>
+              </ul>
+
+              <h4>🔐 Credential Protection</h4>
+              <ul>
+              <li>Reset passwords for the affected user.</li>
+              <li>Invalidate Kerberos tickets.</li>
+              <li>Rotate privileged credentials.</li>
+              </ul>
+
+              <h4>🧪 Investigation & Forensics</h4>
+              <ul>
+              <li>Capture memory from HOST-A.</li>
+              <li>Collect PowerShell logs (4104, transcripts).</li>
+              <li>Preserve suspicious script file.</li>
+              </ul>
+
+              <h4>🧹 Remediation</h4>
+              <ul>
+              <li>Remove persistence mechanisms.</li>
+              <li>Scan both hosts with EDR.</li>
+              <li>Reimage HOST-B if compromise confirmed.</li>
+              </ul>
+
+              <h4>📈 Monitoring Improvements</h4>
+              <ul>
+              <li>Alert on WinRM + PowerShell activity.</li>
+              <li>Restrict PowerShell remoting to admin groups.</li>
+              <li>Enable enhanced PowerShell logging.</li>
+              </ul>
+
+              </section>
+
             </div>
           </div>
         </div>
